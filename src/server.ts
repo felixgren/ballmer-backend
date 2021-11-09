@@ -10,6 +10,7 @@ export class Server {
 
   constructor() {
     this.initialize();
+    this.handleRoutes();
     this.handleSocketConnection();
   }
 
@@ -24,6 +25,22 @@ export class Server {
         // allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept',
         // credentials: true,
       },
+    });
+
+    this.configureApp();
+    // this.handleSocketConnection();?
+  }
+
+  // Tell express which static file to serve
+  private configureApp(): void {
+    const path = require('path');
+    this.app.use(express.static(path.join(__dirname, '../public')));
+  }
+
+  // Test route /hello
+  private handleRoutes(): void {
+    this.app.get('/hello', (req, res) => {
+      res.send(`<h1>Hello, whats up brother?</h1>`);
     });
   }
 
