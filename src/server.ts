@@ -6,6 +6,9 @@ export class Server {
   private app: Application;
   private io: SocketIOServer;
 
+  // Stores connected sockets
+  private activeSockets: string[] = [];
+
   private readonly DEFAULT_PORT = 5000;
 
   constructor() {
@@ -46,7 +49,36 @@ export class Server {
 
   private handleSocketConnection(): void {
     this.io.on('connection', (socket) => {
-      console.log(`User ${socket.id} connected!`);
+      console.log(`Start connecting ID: ${socket.id}...`);
+
+      // Check if connecting user exists in activeSockets[]
+      const existingSocket = this.activeSockets.find(
+        (existingSocket) => existingSocket === socket.id
+      );
+
+      if (!existingSocket) {
+        this.activeSockets.push(socket.id);
+
+        socket.emit('update-user-list', {
+          users: this.activeSockets.filter(
+            (existingSocket) => existingSocket !== socket.id
+          ),
+        });
+
+        socket.broadcast.emit('update-user-list', {
+          users: [socket.id],
+        });
+
+        socket.on('disconnect', () => {
+          console.log(`Disconnecting ${socket.id}`);
+          this.activeSockets = this.activeSockets.filter(
+            (existingSocket) => existingSocket !== socket.id
+          );
+          socket.broadcast.emit('remove-user', {
+            socketId: socket.id,
+          });
+        });
+      }
     });
   }
 
