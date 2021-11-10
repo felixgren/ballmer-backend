@@ -13,8 +13,6 @@ export class Server {
 
   constructor() {
     this.initialize();
-    this.handleRoutes();
-    this.handleSocketConnection();
   }
 
   private initialize(): void {
@@ -31,7 +29,8 @@ export class Server {
     });
 
     this.configureApp();
-    // this.handleSocketConnection();?
+    this.handleRoutes();
+    this.handleSocketConnection();
   }
 
   // Tell express which static file to serve
@@ -40,10 +39,9 @@ export class Server {
     this.app.use(express.static(path.join(__dirname, '../public')));
   }
 
-  // Test route /hello
   private handleRoutes(): void {
-    this.app.get('/hello', (req, res) => {
-      res.send(`<h1>Hello, whats up brother?</h1>`);
+    this.app.get('/', (req, res) => {
+      res.sendFile('index.html');
     });
   }
 
@@ -68,17 +66,38 @@ export class Server {
         socket.broadcast.emit('update-user-list', {
           users: [socket.id],
         });
-
-        socket.on('disconnect', () => {
-          console.log(`Disconnecting ${socket.id}`);
-          this.activeSockets = this.activeSockets.filter(
-            (existingSocket) => existingSocket !== socket.id
-          );
-          socket.broadcast.emit('remove-user', {
-            socketId: socket.id,
-          });
-        });
       }
+
+      socket.on('call-user', (data: any) => {
+        socket.to(data.to).emit('call-made', {
+          offer: data.offer,
+          socket: socket.id,
+        });
+      });
+
+      // Respond to call
+      socket.on('make-answer', (data) => {
+        socket.to(data.to).emit('answer-made', {
+          socket: socket.id,
+          answer: data.answer,
+        });
+      });
+
+      socket.on('reject-call', (data) => {
+        socket.to(data.from).emit('call-rejected', {
+          socket: socket.id,
+        });
+      });
+
+      socket.on('disconnect', () => {
+        console.log(`Disconnecting ${socket.id}`);
+        this.activeSockets = this.activeSockets.filter(
+          (existingSocket) => existingSocket !== socket.id
+        );
+        socket.broadcast.emit('remove-user', {
+          socketId: socket.id,
+        });
+      });
     });
   }
 
