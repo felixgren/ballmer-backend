@@ -1,8 +1,10 @@
-import { Server } from './server';
+// import { Server } from './server';
+import { GameServer } from './server-wip';
 
-const server = new Server();
+// const server = new Server();
+const server = new GameServer();
 
-server.listen((port) => {
+server.listen((port: any) => {
   if (process.env.NODE_ENV === 'production') {
     console.log(
       `Server listening on port ${port} in ${process.env.NODE_ENV} mode`
